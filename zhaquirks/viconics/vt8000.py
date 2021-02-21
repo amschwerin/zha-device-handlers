@@ -1,4 +1,6 @@
 """Viconics VT8000"""
+import logging
+
 from zigpy.profiles import zha
 from zigpy.quirks import CustomCluster, CustomDevice
 
@@ -30,6 +32,8 @@ from ..const import (
     PROFILE_ID,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 class TemperatureFixer(object):
     """Type to mix into custom devices that need to fix up temperature attributes
     that the device incorrectly double-converted from imperial to si units.
@@ -43,8 +47,10 @@ class TemperatureFixer(object):
     def fix_value(self, attrid, value):
         """Function provided to fix temperature attributes."""
         attr_info = self.attributes.get(attrid, ("", ))
+        _LOGGER.debug("Processing fix_value for attrid 0x%x %s", attrid, attr_info)
         if attr_info[0] not in self.temperature_applicable_attributes:
             return value
+        _LOGGER.debug("Converting from value %s", value)
         return attr_info[1](value * 9.0 / 5.0 + 3200)
 
 class FixTemperatureCluster(CustomCluster, TemperatureMeasurement, TemperatureFixer):
@@ -57,6 +63,7 @@ class FixTemperatureCluster(CustomCluster, TemperatureMeasurement, TemperatureFi
     ]
 
     def _update_attribute(self, attrid, value):
+        _LOGGER.debug("Updating attribute in FixTemperatureCluster 0x%x %s", attrid, value)
         super()._update_attribute(attrid, self.fix_value(attrid, value))
 
 
@@ -64,7 +71,7 @@ class VT8000(CustomDevice):
     """Viconics VT8000 HVAC Controller"""
 
     signature = {
-        MODELS_INFO: [("Viconics", "8000 Series")],
+        MODELS_INFO: [("Viconics", "8000 SERIES")],
         ENDPOINTS: {
             10: {
                 PROFILE_ID: 0x104,
