@@ -53,7 +53,7 @@ class TemperatureFixer(object):
         _LOGGER.debug("Converting from value %s", value)
         return attr_info[1](value * 9.0 / 5.0 + 3200)
 
-class FixTemperatureCluster(CustomCluster, TemperatureMeasurement, TemperatureFixer):
+class VT8000Temperature(CustomCluster, TemperatureMeasurement, TemperatureFixer):
     """Custom Temperature cluster that fixes misreported temperatures."""
     cluster_id = TemperatureMeasurement.cluster_id
     temperature_applicable_attributes = [
@@ -63,9 +63,27 @@ class FixTemperatureCluster(CustomCluster, TemperatureMeasurement, TemperatureFi
     ]
 
     def _update_attribute(self, attrid, value):
-        _LOGGER.debug("Updating attribute in FixTemperatureCluster 0x%x %s", attrid, value)
+        _LOGGER.debug("Updating attribute in VT8000Temperature 0x%x %s", attrid, value)
         super()._update_attribute(attrid, self.fix_value(attrid, value))
 
+class VT8000Thermostat(CustomCluster, Thermostat, TemperatureFixer):
+    """Customer Thermostat cluster that fixes misreported temperatures."""
+    cluster_id = Thermostat.cluster_id
+    temperature_applicable_attribtues = [
+        "local_temp",
+        "abs_max_cool_setpoint_limit",
+        "abs_min_cool_setpoint_limit",
+        "abs_max_heat_setpoint_limit",
+        "abs_min_heat_setpoint_limit",
+        "max_cool_setpoint_limit",
+        "min_cool_setpoint_limit",
+        "max_heat_setpoint_limit",
+        "min_heat_setpoint_limit",
+        "occupied_heating_setpoint",
+        "occupied_cooling_setpoint",
+        "unoccupied_heating_setpoint",
+        "unoccupied_cooling_setpoint",
+    ]
 
 class VT8000(CustomDevice):
     """Viconics VT8000 HVAC Controller"""
@@ -121,10 +139,10 @@ class VT8000(CustomDevice):
                     Identify.cluster_id,
                     Groups.cluster_id,
                     Scenes.cluster_id,
-                    Thermostat.cluster_id,
+                    VT8000Thermostat,
                     Fan.cluster_id,
                     UserInterface.cluster_id,
-                    FixTemperatureCluster,
+                    VT8000Temperature,
                     OccupancySensing.cluster_id,
                 ],
                 OUTPUT_CLUSTERS: [
@@ -132,10 +150,10 @@ class VT8000(CustomDevice):
                     Identify.cluster_id,
                     Groups.cluster_id,
                     Scenes.cluster_id,
-                    Thermostat.cluster_id,
+                    VT8000Thermostat,
                     Fan.cluster_id,
                     UserInterface.cluster_id,
-                    FixTemperatureCluster,
+                    VT8000Temperature,
                     OccupancySensing.cluster_id,
                     IasZone.cluster_id,
                 ],
